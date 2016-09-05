@@ -261,25 +261,62 @@ int main(int argc, char** argv)
 {
 
 	Matrix x;
+	Matrix psi;
+	Vector mu0;
+	Vector hyperparams;
+	Vector initialLabels = v({});
 	generator.seed(time(NULL));
 	srand(time(NULL));
-	if (argc == 2)
+	if (argc > 1)
 		x.readBin(argv[1]);
-	cout << x.r;
+
+	cout << argv[1] << endl;
+	cout << "NPOINTS :" << x.r << " NDIMS:" << x.r << endl;
 	nthd = thread::hardware_concurrency();
 	n = x.r; // Number of Points
 	d = x.m;
-
 	init_buffer(nthd, x.m);
 	cout << " Available number of threads : " << nthd << endl;
 	precomputeGammaLn(2 * n + 100 * d);
 
 
+	// Hyper-parameters with default values
+	if (x.data == NULL)
+	{
+		cout << "Usage: " << "dpsl.exe datafile.matrix [hypermean.matrix] [hyperscatter.matrix] [params.matrix (d,m,kappa,gamma)] [initiallabels.matrix]";
+		return -1;
+	}
+	if (argc > 2)
+		mu0.readBin(argv[2]);
+	else
+		mu0 = x.mean();
+	if (argc > 3)
+		psi.readBin(argv[3]);
+	else
+		psi = (eye(d)*(x.m + 3));
+
+	if (argc > 4)
+	{
+		hyperparams.readBin(argv[3]);
+		m = hyperparams[1];
+		kappa = hyperparams[2];
+		gamma = hyperparams[3];
+	}
+	else
+	{
+		m = x.m + 3;
+		kappa = 1;
+		gamma = 1;
+	}
+	if (argc > 5)
+		initialLabels.readBin(argv[5]);
+
+	
 	ThreadPool tpool(thread::hardware_concurrency());
 	debugMode(1);
 	step();
 	Vector likelihoods(MAX_SWEEP);
-	auto labels = SliceSampler(x, x.m + 3, 1,1, x.mean().copy(), (eye(d)*(x.m + 3)).copy(),tpool, likelihoods); // data,m,kappa,gamma,mean,cov 
+	auto labels = SliceSampler(x,m,kappa,gamma,mu0,psi,tpool,likelihoods,initialLabels); // data,m,kappa,gamma,mean,cov 
 	string filename = argv[1];
 	labels.writeBin(filename.append( ".labels").c_str());
 	filename = argv[1];
