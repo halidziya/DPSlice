@@ -12,6 +12,6 @@ function X=igmm_normalize(X,ndims)
     [vv dd]=eig(cc);
     X=X*vv(:,end:-1:(end-(ndims-1))); %d=20
     sg=std(X,[],1);
-    X=X./max(sg);%(ones(size(X,1),1)*sg);
+    X=X./(ones(size(X,1),1)*sg);
     %X=(X-repmat(min(X),size(X,1),1))./repmat(max(X)-min(X),size(X,1),1);
 end
