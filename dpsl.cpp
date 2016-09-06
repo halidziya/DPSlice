@@ -268,9 +268,15 @@ int main(int argc, char** argv)
 	generator.seed(time(NULL));
 	srand(time(NULL));
 	if (argc > 1)
+	{
 		x.readBin(argv[1]);
-
-	cout << argv[1] << endl;
+		cout << argv[1] << endl;
+	}
+	else
+	{
+		cout << "Usage: " << "dpsl.exe datafile.matrix [hypermean.matrix] [hyperscatter.matrix] [params.matrix (d,m,kappa,gamma)]  [#ITERATION] [#BURNIN] [#SAMPLE]  [initiallabels.matrix]: In fixed order";
+		return -1;
+	}
 	cout << "NPOINTS :" << x.r << " NDIMS:" << x.m << endl;
 	nthd = thread::hardware_concurrency();
 	n = x.r; // Number of Points
