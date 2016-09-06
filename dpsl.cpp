@@ -220,20 +220,11 @@ Matrix SliceSampler(Matrix& x, double m, double kappa, double gamma, Vector& mu0
 			else  // Empty Tables , Sample from Prior
 			{
 				Matrix sigma = priorcov.rnd();
-				mvns[i].cholsigma = sigma.chol();
 				Normal priormean(mu0, sigma / kappa);
-				mvns[i].mu =  priormean.rnd();
+				mvns[i] = Normal(priormean.rnd(), sigma);
 			}
 		}
 
-		if (empricalCovariance == 1) // Updates the PSI based on average covariance, emprical default false
-		{
-			Psi = zeros(d, d);
-			for (int i = 0;i < c.count.n;i++)
-				Psi += (c.scatter[i] - ((c.sum[i] >> c.sum[i]) / c.count[i]));
-			Psi /= (n/(m-d-1));
-			Psi.print();
-		}
 
 		//Sample labels
 		r.reset(mvns, beta, u);
@@ -263,8 +254,8 @@ int main(int argc, char** argv)
 	Matrix x;
 	Matrix psi;
 	Vector mu0;
-	Vector hyperparams;
-	Vector initialLabels = v({});
+	Matrix hyperparams;
+	Matrix initialLabels;
 	generator.seed(time(NULL));
 	srand(time(NULL));
 	if (argc > 1)
@@ -294,7 +285,11 @@ int main(int argc, char** argv)
 	}
 
 	if (argc > 2)
-		mu0.readBin(argv[2]);
+	{
+		Matrix m;
+		m.readBin(argv[2]);
+		mu0 = m;
+	}
 	else
 		mu0 = x.mean();
 
@@ -307,9 +302,9 @@ int main(int argc, char** argv)
 	{
 		hyperparams.readBin(argv[4]);
 		hyperparams.print();
-		m = hyperparams[1];
-		kappa = hyperparams[2];
-		gamma = hyperparams[3];
+		m = hyperparams.data[1];
+		kappa = hyperparams.data[2];
+		gamma = hyperparams.data[3];
 		cout << m << " " << kappa << " " << gamma << endl;
 	}
 	else
