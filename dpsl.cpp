@@ -271,7 +271,7 @@ int main(int argc, char** argv)
 		x.readBin(argv[1]);
 
 	cout << argv[1] << endl;
-	cout << "NPOINTS :" << x.r << " NDIMS:" << x.r << endl;
+	cout << "NPOINTS :" << x.r << " NDIMS:" << x.m << endl;
 	nthd = thread::hardware_concurrency();
 	n = x.r; // Number of Points
 	d = x.m;
@@ -283,13 +283,15 @@ int main(int argc, char** argv)
 	// Hyper-parameters with default values
 	if (x.data == NULL)
 	{
-		cout << "Usage: " << "dpsl.exe datafile.matrix [hypermean.matrix] [hyperscatter.matrix] [params.matrix (d,m,kappa,gamma)] [initiallabels.matrix]";
+		cout << "Usage: " << "dpsl.exe datafile.matrix [hypermean.matrix] [hyperscatter.matrix] [params.matrix (d,m,kappa,gamma)]  [#ITERATION] [#BURNIN] [#SAMPLE]  [initiallabels.matrix]: In fixed order";
 		return -1;
 	}
+
 	if (argc > 2)
 		mu0.readBin(argv[2]);
 	else
 		mu0 = x.mean();
+
 	if (argc > 3)
 		psi.readBin(argv[3]);
 	else
@@ -297,10 +299,12 @@ int main(int argc, char** argv)
 
 	if (argc > 4)
 	{
-		hyperparams.readBin(argv[3]);
+		hyperparams.readBin(argv[4]);
+		hyperparams.print();
 		m = hyperparams[1];
 		kappa = hyperparams[2];
 		gamma = hyperparams[3];
+		cout << m << " " << kappa << " " << gamma << endl;
 	}
 	else
 	{
@@ -308,10 +312,20 @@ int main(int argc, char** argv)
 		kappa = 1;
 		gamma = 1;
 	}
-	if (argc > 5)
-		initialLabels.readBin(argv[5]);
 
+	if (argc > 5)
+		MAX_SWEEP = atoi(argv[5]);
+
+	if (argc > 6)
+		BURNIN = atoi(argv[6]);
+
+	if (argc > 7)
+		STEP = (MAX_SWEEP - BURNIN) / atoi(argv[7]);
 	
+	if (argc > 8)
+		initialLabels.readBin(argv[8]);
+
+
 	ThreadPool tpool(thread::hardware_concurrency());
 	debugMode(1);
 	step();
@@ -319,8 +333,7 @@ int main(int argc, char** argv)
 	auto labels = SliceSampler(x,m,kappa,gamma,mu0,psi,tpool,likelihoods,initialLabels); // data,m,kappa,gamma,mean,cov 
 	string filename = argv[1];
 	labels.writeBin(filename.append( ".labels").c_str());
-	filename = argv[1];
+	filename = argv[1];;
 	likelihoods.writeBin(filename.append(".likelihood").c_str());
 	step();
-
 }
