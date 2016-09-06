@@ -43,7 +43,7 @@ BURNIN = '500';
 NSAMPLE = '20';
 
 %Call
-igmm_createBinaryFiles([prefix '/toy'],X,Psi,mu0,m,k0,gam);
+igmm_createBinaryFiles([prefix '/toy'],X,Psi,mu0,m,k0,gamma);
 cmd = ['dpsl.exe ',data,' ',meanp,' ',psip,' ',params,' ',NITER,' ',BURNIN,' ',NSAMPLE];
 fprintf(1,[cmd , '\n']);
 system(cmd);
