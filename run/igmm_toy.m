@@ -28,7 +28,7 @@ title('Original');
 
 %Prior configuration
 Psi = eye(D);
-mu0 = zeros(1,D);
+mu0 = zeros(D,1);
 m   = D+3;
 k0  = 1;
 gamma = 1;
