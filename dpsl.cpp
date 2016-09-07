@@ -291,12 +291,12 @@ int main(int argc, char** argv)
 		mu0 = m;
 	}
 	else
-		mu0 = x.mean();
+		mu0 = x.mean().copy();
 
 	if (argc > 3)
 		psi.readBin(argv[3]);
 	else
-		psi = (eye(d)*(x.m + 3));
+		psi = (eye(d));
 
 	if (argc > 4)
 	{

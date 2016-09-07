@@ -6,8 +6,8 @@
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <LocalDebuggerCommandArguments>mnist.matrix</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>pines.matrix</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
-    <LocalDebuggerWorkingDirectory>.\run\experiments\toy</LocalDebuggerWorkingDirectory>
+    <LocalDebuggerWorkingDirectory>.\run\experiments\pines</LocalDebuggerWorkingDirectory>
   </PropertyGroup>
 </Project>
