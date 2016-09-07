@@ -296,7 +296,7 @@ int main(int argc, char** argv)
 	if (argc > 3)
 		psi.readBin(argv[3]);
 	else
-		psi = (eye(d));
+		psi = (eye(d)).copy();
 
 	if (argc > 4)
 	{
