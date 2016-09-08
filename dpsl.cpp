@@ -1,6 +1,7 @@
 #include <iostream>
 #include "FastMat.h"
 #include <string>
+#include "Stut.h"
 int MAX_SWEEP = 500;
 int NINITIAL = 10;
 int MAXCOMP = 20;
@@ -49,6 +50,7 @@ public:
 				else
 					likelihoods[j] = -INFINITY;
 			}
+			if (likelihoods[1]!= -INFINITY)
 			labels[i] = sampleFromLog(likelihoods); //**
 
 		}
@@ -167,6 +169,7 @@ Matrix SliceSampler(Matrix& x, double m, double kappa, double gamma, Vector& mu0
 	IWishart priorcov(Psi, m); // No need to create in every iteration
 	int nlabelsample = ((MAX_SWEEP - BURNIN) / STEP);
 	Matrix sampledLabels(nlabelsample, n);
+	Normal posteriormean(d);
 	//SIMULATION
 	for (auto iter = 0; iter < MAX_SWEEP; iter++)
 	{
@@ -178,6 +181,10 @@ Matrix SliceSampler(Matrix& x, double m, double kappa, double gamma, Vector& mu0
 			workers.submit(c);
 		}
 		workers.waitAll();
+		for (auto i = 0;i < NTABLE;i++)
+		{
+			c.scatter[i] -= ((c.sum[i] / n) >> c.sum[i]) ;
+		}
 
 		double totallikelihood = 0;
 		for (int i = 0;i < c.count.n;i++) // Jchang's formula for joint marginal distribution
@@ -186,7 +193,7 @@ Matrix SliceSampler(Matrix& x, double m, double kappa, double gamma, Vector& mu0
 			double s1 = kappa + n;
 			Vector& s = c.sum[i];
 			Vector& diff = (mu0 - (s / n));
-			Matrix& ss = Psi + c.scatter[i] - ((c.sum[i] >> c.sum[i]) / n) + (diff >> diff)*(kappa*n / (kappa + n));
+			Matrix& ss = Psi + c.scatter[i] + (diff >> diff)*(kappa*n / (kappa + n));
 			ss = ss / (n + m);
 			totallikelihood += -0.5*n*d*logpi - gammalnd(m) + gammalnd(n + m) - (0.5*(n + m))*(d*log(n + m)
 				+ 2 * ss.chol().sumlogdiag()) + (0.5*m)*(d*log(m) + 2 * (Psi / m).chol().sumlogdiag()) - 0.5*d*log((n + kappa) / kappa) + log(gamma) + gl_pc[n * 2];
@@ -198,34 +205,38 @@ Matrix SliceSampler(Matrix& x, double m, double kappa, double gamma, Vector& mu0
 		Vector alpha = c.count.append(gamma);
 		Dirichlet dr(alpha);
 		beta = dr.rnd();
+		
 		// Sample U
 		u = rand(n);
 		u *= beta[r.labels];
 		//New Sticks
-		Vector newsticks = stickBreaker(u.minimum(), beta[beta.n - 1]);
+		double ustar =  u.minimum();
+		Vector newsticks = stickBreaker(ustar, beta[beta.n - 1],gamma);
+		beta.resize(beta.n - 1);
 		beta = beta.append(newsticks);
+
 		NTABLE = beta.n;
 		// Sample from Parameter Posterior or From Prior
-		mvns.resize(NTABLE, Normal(d));
+		mvns.resize(NTABLE);
 		for (int i = 0;i < NTABLE;i++)
 		{
 			if (i < c.count.n) // Used tables
 			{
 				int n = c.count[i];
 				Vector meandiff = ((c.sum[i] / n) - mu0);
-				IWishart posteriorcov(Psi + c.scatter[i] - (c.sum[i]>>c.sum[i])/n + (meandiff>>meandiff)*(kappa*n / (kappa + n)), m + n);
+				IWishart posteriorcov(Psi + c.scatter[i] + (meandiff >> meandiff)*(kappa*n / (kappa + n)), m + n);
 				Matrix sigma = posteriorcov.rnd();
-				Normal posteriormean((mu0*kappa + c.sum[i]) / (n+kappa), sigma / (kappa + n));
+				Normal posteriormean((mu0*kappa + c.sum[i]) / (kappa + n), sigma / (kappa + n));
 				mvns[i] = Normal(posteriormean.rnd(), sigma);
 			}
 			else  // Empty Tables , Sample from Prior
 			{
 				Matrix sigma = priorcov.rnd();
-				Normal priormean(mu0,sigma/kappa);
-				mvns[i] = Normal(priormean.rnd(),sigma);
+				Normal priormean(mu0, sigma / kappa);
+				mvns[i] = Normal(priormean.rnd(), sigma);
 			}
 		}
-
+		
 
 		//Sample labels
 		r.reset(mvns, beta, u);
@@ -233,7 +244,6 @@ Matrix SliceSampler(Matrix& x, double m, double kappa, double gamma, Vector& mu0
 			workers.submit(r);
 		}
 		workers.waitAll();
-
 		NTABLE = relabel(r.labels); // Get unique ones , remove ones with 0 prob
 		cout << NTABLE << ",";
 		if (iter >= BURNIN && (iter - BURNIN) % STEP == 0) {
@@ -335,6 +345,7 @@ int main(int argc, char** argv)
 	debugMode(1);
 	step();
 	Vector likelihoods(MAX_SWEEP);
+
 	auto labels = SliceSampler(x, m, kappa, gamma, mu0, psi, tpool, likelihoods, initialLabels); // data,m,kappa,gamma,mean,cov 
 	string filename = argv[1];
 	labels.writeBin(filename.append(".labels").c_str());

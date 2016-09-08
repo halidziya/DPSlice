@@ -7,7 +7,7 @@ X=X(Y~=0,:);
 Y=Y(Y~=0,:);
 X=igmm_normalize(X);
 Xorg = X;
-X = X(:,1:10); % Number of dimensions selected
+X = X(:,1:50); % Number of dimensions selected
 
 subplot(1,2,1)
 scatter(X(:,1),X(:,2),5,Y);
@@ -16,7 +16,7 @@ D=size(X,2);
 prefix = 'experiments/pines/';
 %Prior configuration
 m   = D+3;
-Psi = eye(D)*m; 
+Psi = eye(D); 
 mu0 = zeros(1,D);
 k0  = 1 ;
 gamma = 1;
@@ -26,8 +26,8 @@ data=[prefix,'pines.matrix'];
 meanp=[prefix,'pines_mean.matrix'];
 psip=[prefix,'pines_psi.matrix'];
 params=[prefix,'pines_params.matrix'];
-NITER = '4000';
-BURNIN = '2000';
+NITER = '1000';
+BURNIN = '500';
 NSAMPLE = '10';
 
 %Call

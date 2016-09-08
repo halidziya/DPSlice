@@ -6,9 +6,9 @@ if ~(exist(prefix, 'dir') == 7)
 end
 
 %% Generate Toy Data
-NCOMP = 5;
-D=2;
-S=10;
+NCOMP = 26;
+D=8;
+S=40;
 NPOINTS=1000;
 mus=mvnrnd(zeros(1,D),eye(D,D),NCOMP);
 sigmas = zeros(D,D,NCOMP);
