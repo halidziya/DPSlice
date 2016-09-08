@@ -215,7 +215,7 @@ Matrix SliceSampler(Matrix& x, double m, double kappa, double gamma, Vector& mu0
 
 		NTABLE = beta.n;
 		// Sample from Parameter Posterior or From Prior
-		mvns.resize(NTABLE,Normal(d));
+		mvns.resize(NTABLE);
 		for (int i = 0;i < NTABLE;i++)
 		{
 			if (i < c.count.n) // Used tables
