@@ -83,7 +83,7 @@ public:
 	void run(int id) {
 		// Use thread specific buffer
 		SETUP_ID()
-			int taskid = this->taskid++;
+		int taskid = this->taskid++;
 		int maxlab = labels.maximum();
 		int label;
 		for (int i = 0;i < n;i++)
@@ -96,6 +96,8 @@ public:
 				scatter[label] += x(i) >> x(i); // Second moment actually
 			}
 		}
+
+		scatter[taskid] -= ((sum[taskid] >> sum[taskid]) / count[taskid]); // Actual Scatter
 	}
 };
 
@@ -181,9 +183,7 @@ Matrix SliceSampler(Matrix& x, double m, double kappa, double gamma, Vector& mu0
 			workers.submit(c);
 		}
 		workers.waitAll();
-		for (auto i = 0; i < NTABLE; i++) {
-			c.scatter[i] -= ((c.sum[i] >> c.sum[i]) / c.count[i]);
-		}
+
 		double totallikelihood = 0;
 		for (int i = 0;i < c.count.n;i++) // Jchang's formula for joint marginal distribution
 		{
@@ -212,10 +212,9 @@ Matrix SliceSampler(Matrix& x, double m, double kappa, double gamma, Vector& mu0
 		Vector newsticks = stickBreaker(ustar, beta[beta.n - 1],gamma);
 		beta.resize(beta.n - 1);
 		beta = beta.append(newsticks);
-
 		NTABLE = beta.n;
 		// Sample from Parameter Posterior or From Prior
-		mvns.resize(NTABLE);
+		mvns.resize(NTABLE,Normal(d));
 		for (int i = 0;i < NTABLE;i++)
 		{
 			if (i < c.count.n) // Used tables

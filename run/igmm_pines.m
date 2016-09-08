@@ -7,7 +7,7 @@ X=X(Y~=0,:);
 Y=Y(Y~=0,:);
 X=igmm_normalize(X);
 Xorg = X;
-X = X(:,1:50); % Number of dimensions selected
+X = X(:,1:3); % Number of dimensions selected
 
 subplot(1,2,1)
 scatter(X(:,1),X(:,2),5,Y);
