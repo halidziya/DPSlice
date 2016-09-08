@@ -181,11 +181,9 @@ Matrix SliceSampler(Matrix& x, double m, double kappa, double gamma, Vector& mu0
 			workers.submit(c);
 		}
 		workers.waitAll();
-		for (auto i = 0;i < NTABLE;i++)
-		{
-			c.scatter[i] -= ((c.sum[i] / n) >> c.sum[i]) ;
+		for (auto i = 0; i < NTABLE; i++) {
+			c.scatter[i] -= ((c.sum[i] >> c.sum[i]) / c.count[i]);
 		}
-
 		double totallikelihood = 0;
 		for (int i = 0;i < c.count.n;i++) // Jchang's formula for joint marginal distribution
 		{
@@ -217,14 +215,14 @@ Matrix SliceSampler(Matrix& x, double m, double kappa, double gamma, Vector& mu0
 
 		NTABLE = beta.n;
 		// Sample from Parameter Posterior or From Prior
-		mvns.resize(NTABLE);
+		mvns.resize(NTABLE,Normal(d));
 		for (int i = 0;i < NTABLE;i++)
 		{
 			if (i < c.count.n) // Used tables
 			{
 				int n = c.count[i];
 				Vector meandiff = ((c.sum[i] / n) - mu0);
-				IWishart posteriorcov(Psi + c.scatter[i] + (meandiff >> meandiff)*(kappa*n / (kappa + n)), m + n);
+				IWishart posteriorcov(Psi + c.scatter[i] +  (meandiff >> meandiff)*(kappa*n / (kappa + n)), m + n);
 				Matrix sigma = posteriorcov.rnd();
 				Normal posteriormean((mu0*kappa + c.sum[i]) / (kappa + n), sigma / (kappa + n));
 				mvns[i] = Normal(posteriormean.rnd(), sigma);

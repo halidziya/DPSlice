@@ -16,7 +16,7 @@ D=size(X,2);
 prefix = 'experiments/pines/';
 %Prior configuration
 m   = D+3;
-Psi = eye(D); 
+Psi = eye(D)*m; 
 mu0 = zeros(1,D);
 k0  = 1 ;
 gamma = 1;
@@ -26,8 +26,8 @@ data=[prefix,'pines.matrix'];
 meanp=[prefix,'pines_mean.matrix'];
 psip=[prefix,'pines_psi.matrix'];
 params=[prefix,'pines_params.matrix'];
-NITER = '1000';
-BURNIN = '500';
+NITER = '4000';
+BURNIN = '3500';
 NSAMPLE = '10';
 
 %Call

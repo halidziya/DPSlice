@@ -6,9 +6,9 @@ if ~(exist(prefix, 'dir') == 7)
 end
 
 %% Generate Toy Data
-NCOMP = 26;
-D=8;
-S=40;
+NCOMP = 6;
+D=2;
+S=10;
 NPOINTS=1000;
 mus=mvnrnd(zeros(1,D),eye(D,D),NCOMP);
 sigmas = zeros(D,D,NCOMP);
@@ -27,7 +27,7 @@ title('Original');
 %% Call Executable File
 
 %Prior configuration
-Psi = eye(D);
+Psi = eye(D)/10;
 mu0 = zeros(D,1);
 m   = D+3;
 k0  = 1;
