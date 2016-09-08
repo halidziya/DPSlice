@@ -2,7 +2,7 @@
 #include "FastMat.h"
 #include <string>
 int MAX_SWEEP = 500;
-int NINITIAL = 10;
+int NINITIAL = 1;
 int MAXCOMP = 20;
 int BURNIN = 20;
 int STEP = (MAX_SWEEP - BURNIN) / 10; // Default value is 10 sample + 1 post burnin
@@ -13,12 +13,12 @@ public:
 	Matrix& x;
 	vector<Normal> mvns;
 	Vector beta;
-	Vector u;
+	Vector u; 
 	Vector v;
 	Vector labels;
 	atomic<int> taskid;
 	int nchunks;
-	Restaurant(Matrix& data, int nchuks) : x(data), nchunks(nchuks) {
+	Restaurant(Matrix& data,int nchuks) : x(data), nchunks(nchuks){
 		labels = Vector(n);
 	}
 
@@ -31,17 +31,16 @@ public:
 
 	void run(int id) {
 		SETUP_ID()
-			int taskid = this->taskid++; // Oth thread is the main process
+		int taskid = this->taskid++; // Oth thread is the main process
 		auto range = trange(n, nchunks, taskid); // 2xNumber of Threads chunks
-												 //cout << range[1] << endl;
+		//cout << range[1] << endl;
 		int NTABLE = mvns.size();
 		Vector likelihoods(NTABLE);
-		likelihoods.fill(-INFINITY);
-		for (auto i = range[0];i<range[1];i++) // Operates on its own chunk
+		for (auto i=range[0];i<range[1];i++) // Operates on its own chunk
 		{
+
 			for (auto j = 0;j < NTABLE;j++)
 			{
-				
 				if (beta[j] > u[i])
 				{
 					likelihoods[j] = mvns[j].likelihood(x(i)); //**
@@ -50,7 +49,6 @@ public:
 					likelihoods[j] = -INFINITY;
 			}
 			labels[i] = sampleFromLog(likelihoods); //**
-
 		}
 	}
 
@@ -71,17 +69,17 @@ public:
 	}
 
 	void reset() {
-		int vsize = labels.maximum() + 1;
+		int vsize = labels.maximum()+1;
 		count = zeros(vsize);
-		scatter = vector<Matrix>(vsize, zeros(d, d));
-		sum = vector<Vector>(vsize, zeros(d));
+		scatter = vector<Matrix>(vsize,zeros(d,d));
+		sum = vector<Vector>(vsize,zeros(d));
 		taskid = 0;
 	}
 
 	void run(int id) {
 		// Use thread specific buffer
 		SETUP_ID()
-			int taskid = this->taskid++;
+		int taskid = this->taskid++;
 		int maxlab = labels.maximum();
 		int label;
 		for (int i = 0;i < n;i++)
@@ -91,7 +89,7 @@ public:
 			{
 				count[label] += 1;
 				sum[label] += x(i);
-				scatter[label] += x(i) >> x(i); // Second moment actually
+				scatter[label] += x(i)>>x(i); // Second moment actually
 			}
 		}
 	}
@@ -111,7 +109,7 @@ int relabel(Vector& labels)
 	return ulabels.n;
 }
 
-Vector stickBreaker(double ustar, double betastar = 1.0, double alpha = 1)
+Vector stickBreaker(double ustar, double betastar = 1.0,double alpha = 1)
 {
 	Dirichlet  ds(v({ 1, alpha })); // Beta
 	Vector lengths(MAXCOMP);
@@ -120,16 +118,16 @@ Vector stickBreaker(double ustar, double betastar = 1.0, double alpha = 1)
 	Vector beta = zeros(MAXCOMP + 1);
 	int i = 0;
 	double totallength = betastar;
-	double betasum = 0;
-	for (i = 0;i<MAXCOMP;i++)
-	{
+	double betasum=0;
+	for (i=0;i<MAXCOMP;i++)
+		{
 		beta[i] = betastar*lengths[i];
 		betasum += beta[i];
 		betastar = betastar*(1 - lengths[i]);
 		if (betastar < ustar)
 			break;
-	}
-	beta.resize(i + 2);
+		}
+	beta.resize(i+2);
 	beta[i + 1] = totallength - betasum;
 	return beta;
 }
@@ -146,7 +144,7 @@ double gammalnd(int x) // Actually works on x/2
 
 double logpi = log(M_PI);
 
-Matrix SliceSampler(Matrix& x, double m, double kappa, double gamma, Vector& mu0, Matrix& Psi, ThreadPool& workers, Vector& likelihoods, Vector initialLabels = v({}), int empricalCovariance = 0)
+Matrix SliceSampler(Matrix& x, double m, double kappa, double gamma, Vector& mu0, Matrix& Psi, ThreadPool& workers,Vector& likelihoods,Vector initialLabels = v({}),int empricalCovariance=0)
 {
 	// INITIALIZATION
 	// Point level variables
@@ -156,22 +154,22 @@ Matrix SliceSampler(Matrix& x, double m, double kappa, double gamma, Vector& mu0
 	beta /= NINITIAL;
 
 	// Table level variables
-	vector<Normal> mvns(NINITIAL, Normal(d));
+	vector<Normal> mvns(NINITIAL,Normal(d));
 
-	Restaurant r(x, nthd * 2); //2*nthd chunks
-	if (initialLabels.n == 0)
+	Restaurant r(x,nthd*2); //2*nthd chunks
+	if (initialLabels.n==0)
 		r.labels = rand(n, NTABLE);
 	else
 		r.labels = initialLabels;
-	Collector  c(x, r.labels);
-	IWishart priorcov(Psi, m); // No need to create in every iteration
+	Collector  c(x,r.labels);
+	IWishart priorcov(Psi,m); // No need to create in every iteration
 	int nlabelsample = ((MAX_SWEEP - BURNIN) / STEP);
 	Matrix sampledLabels(nlabelsample, n);
 	//SIMULATION
 	for (auto iter = 0; iter < MAX_SWEEP; iter++)
 	{
 		if (iter % 10 == 0)
-			cout << "\nIter : " << iter << endl;
+			cout << "Iter : " <<  iter << endl;
 		//Collect Statistics
 		c.reset();
 		for (auto i = 0; i < NTABLE; i++) { // Each label collects its statistics async.
@@ -188,13 +186,13 @@ Matrix SliceSampler(Matrix& x, double m, double kappa, double gamma, Vector& mu0
 			Vector& diff = (mu0 - (s / n));
 			Matrix& ss = Psi + c.scatter[i] - ((c.sum[i] >> c.sum[i]) / n) + (diff >> diff)*(kappa*n / (kappa + n));
 			ss = ss / (n + m);
-			totallikelihood += -0.5*n*d*logpi - gammalnd(m) + gammalnd(n + m) - (0.5*(n + m))*(d*log(n + m)
+			totallikelihood += -0.5*n*d*logpi - gammalnd(m) + gammalnd(n + m) - (0.5*(n+ m))*(d*log(n + m)
 				+ 2 * ss.chol().sumlogdiag()) + (0.5*m)*(d*log(m) + 2 * (Psi / m).chol().sumlogdiag()) - 0.5*d*log((n + kappa) / kappa) + log(gamma) + gl_pc[n * 2];
 		}
 		likelihoods[iter] = totallikelihood + gl_pc[gamma * 2] - gl_pc[(gamma + n) * 2];
 
 
-		// Create Betas
+	    // Create Betas
 		Vector alpha = c.count.append(gamma);
 		Dirichlet dr(alpha);
 		beta = dr.rnd();
@@ -206,23 +204,24 @@ Matrix SliceSampler(Matrix& x, double m, double kappa, double gamma, Vector& mu0
 		beta = beta.append(newsticks);
 		NTABLE = beta.n;
 		// Sample from Parameter Posterior or From Prior
-		mvns.resize(NTABLE, Normal(d));
+		mvns.resize(NTABLE,Normal(d));
 		for (int i = 0;i < NTABLE;i++)
 		{
 			if (i < c.count.n) // Used tables
 			{
 				int n = c.count[i];
-				Vector meandiff = ((c.sum[i] / n) - mu0);
-				IWishart posteriorcov(Psi + c.scatter[i] - (c.sum[i]>>c.sum[i])/n + (meandiff>>meandiff)*(kappa*n / (kappa + n)), m + n);
+				Vector meandiff = ((c.sum[i] / n)-mu0);
+				IWishart posteriorcov(Psi + c.scatter[i] - ((c.sum[i]>>c.sum[i])/n) + (meandiff>>meandiff)*(kappa*n / (kappa + n)), m + n);
 				Matrix sigma = posteriorcov.rnd();
-				Normal posteriormean((mu0*kappa + c.sum[i]) / (n+kappa), sigma / (kappa + n));
-				mvns[i] = Normal(posteriormean.rnd(), sigma);
+				Normal posteriormean(( mu0*kappa + c.sum[i])/n, sigma / (kappa+n));
+				mvns[i] = Normal(posteriormean.rnd(),sigma);
 			}
 			else  // Empty Tables , Sample from Prior
 			{
 				Matrix sigma = priorcov.rnd();
-				Normal priormean(mu0,sigma/kappa);
-				mvns[i] = Normal(priormean.rnd(),sigma);
+				Normal priormean(mu0, sigma / kappa);
+				mvns[i] = Normal(priormean.rnd(), sigma);
+
 			}
 		}
 
@@ -235,13 +234,14 @@ Matrix SliceSampler(Matrix& x, double m, double kappa, double gamma, Vector& mu0
 		workers.waitAll();
 
 		NTABLE = relabel(r.labels); // Get unique ones , remove ones with 0 prob
-		cout << NTABLE << ",";
+		cout << NTABLE << endl; 
+
 		if (iter >= BURNIN && (iter - BURNIN) % STEP == 0) {
 			int li = (((iter - BURNIN) / STEP));
 			for (auto i = 0; i < n;i++)
 				sampledLabels(li)[i] = r.labels[i];
 		}
-
+		
 	}
 
 	return sampledLabels;
@@ -288,11 +288,15 @@ int main(int argc, char** argv)
 	{
 		Matrix mu;
 		mu.readBin(argv[2]);
-		mu0 = mu;
+		mu0 = m;
 	}
 	else
 		mu0 = x.mean().copy();
 
+	if (argc > 3)
+		psi.readBin(argv[3]);
+	else
+		psi = (eye(d)).copy();
 
 	if (argc > 4)
 	{
@@ -310,14 +314,6 @@ int main(int argc, char** argv)
 		gamma = 1;
 	}
 
-	if (argc > 3)
-		psi.readBin(argv[3]);
-	else
-		psi = (eye(d)*m).copy();
-
-
-
-
 	if (argc > 5)
 		MAX_SWEEP = atoi(argv[5]);
 
@@ -326,18 +322,18 @@ int main(int argc, char** argv)
 
 	if (argc > 7)
 		STEP = (MAX_SWEEP - BURNIN) / atoi(argv[7]);
-
+	
 	if (argc > 8)
 		initialLabels.readBin(argv[8]);
 
 
-	ThreadPool tpool(nthd);
+	ThreadPool tpool(thread::hardware_concurrency());
 	debugMode(1);
 	step();
 	Vector likelihoods(MAX_SWEEP);
-	auto labels = SliceSampler(x, m, kappa, gamma, mu0, psi, tpool, likelihoods, initialLabels); // data,m,kappa,gamma,mean,cov 
+	auto labels = SliceSampler(x,m,kappa,gamma,mu0,psi,tpool,likelihoods,initialLabels); // data,m,kappa,gamma,mean,cov 
 	string filename = argv[1];
-	labels.writeBin(filename.append(".labels").c_str());
+	labels.writeBin(filename.append( ".labels").c_str());
 	filename = argv[1];;
 	likelihoods.writeBin(filename.append(".likelihood").c_str());
 	step();
