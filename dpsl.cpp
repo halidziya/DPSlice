@@ -50,7 +50,6 @@ public:
 				else
 					likelihoods[j] = -INFINITY;
 			}
-			if (likelihoods[1]!= -INFINITY)
 			labels[i] = sampleFromLog(likelihoods); //**
 
 		}
@@ -171,7 +170,6 @@ Matrix SliceSampler(Matrix& x, double m, double kappa, double gamma, Vector& mu0
 	IWishart priorcov(Psi, m); // No need to create in every iteration
 	int nlabelsample = ((MAX_SWEEP - BURNIN) / STEP);
 	Matrix sampledLabels(nlabelsample, n);
-	Normal posteriormean(d);
 	//SIMULATION
 	for (auto iter = 0; iter < MAX_SWEEP; iter++)
 	{
