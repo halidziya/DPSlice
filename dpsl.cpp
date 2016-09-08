@@ -2,7 +2,7 @@
 #include "FastMat.h"
 #include <string>
 int MAX_SWEEP = 500;
-int NINITIAL = 10;
+int NINITIAL = 1;
 int MAXCOMP = 20;
 int BURNIN = 20;
 int STEP = (MAX_SWEEP - BURNIN) / 10; // Default value is 10 sample + 1 post burnin
@@ -42,7 +42,9 @@ public:
 			for (auto j = 0;j < NTABLE;j++)
 			{
 				if (beta[j] > u[i])
+				{
 					likelihoods[j] = mvns[j].likelihood(x(i)); //**
+				}
 				else
 					likelihoods[j] = -INFINITY;
 			}
@@ -197,13 +199,10 @@ Matrix SliceSampler(Matrix& x, double m, double kappa, double gamma, Vector& mu0
 		// Sample U
 		u = rand(n);
 		u *= beta[r.labels];
-		
 		//New Sticks
 		Vector newsticks = stickBreaker(u.minimum(), beta[beta.n - 1]);
-		beta.resize(beta.n-1);
 		beta = beta.append(newsticks);
 		NTABLE = beta.n;
-
 		// Sample from Parameter Posterior or From Prior
 		mvns.resize(NTABLE,Normal(d));
 		for (int i = 0;i < NTABLE;i++)
@@ -222,6 +221,7 @@ Matrix SliceSampler(Matrix& x, double m, double kappa, double gamma, Vector& mu0
 				Matrix sigma = priorcov.rnd();
 				Normal priormean(mu0, sigma / kappa);
 				mvns[i] = Normal(priormean.rnd(), sigma);
+
 			}
 		}
 
@@ -234,7 +234,7 @@ Matrix SliceSampler(Matrix& x, double m, double kappa, double gamma, Vector& mu0
 		workers.waitAll();
 
 		NTABLE = relabel(r.labels); // Get unique ones , remove ones with 0 prob
-
+		cout << NTABLE << endl; 
 
 		if (iter >= BURNIN && (iter - BURNIN) % STEP == 0) {
 			int li = (((iter - BURNIN) / STEP));
@@ -286,8 +286,8 @@ int main(int argc, char** argv)
 
 	if (argc > 2)
 	{
-		Matrix m;
-		m.readBin(argv[2]);
+		Matrix mu;
+		mu.readBin(argv[2]);
 		mu0 = m;
 	}
 	else
