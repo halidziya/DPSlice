@@ -173,7 +173,7 @@ Matrix SliceSampler(Matrix& x, double m, double kappa, double gamma, Vector& mu0
 	for (auto iter = 0; iter < MAX_SWEEP; iter++)
 	{
 		if (iter % 10 == 0)
-			cout << "\nIter : " << iter << endl;
+			cout << "Iter : " << iter << endl;
 		//Collect Statistics
 		c.reset();
 		for (auto i = 0; i < NTABLE; i++) { // Each label collects its statistics async.
