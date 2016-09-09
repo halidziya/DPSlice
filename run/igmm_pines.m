@@ -15,10 +15,10 @@ scatter(X(:,1),X(:,2),5,Y);
 D=size(X,2);
 prefix = 'experiments/pines/';
 %Prior configuration
-m   = D+3;
-Psi = eye(D)*m; 
+m   = 2000;
+Psi = eye(D)*(m-d-1); 
 mu0 = zeros(D,1);
-k0  = 1 ;
+k0  = 1000 ;
 gamma = 1;
 
 %File names

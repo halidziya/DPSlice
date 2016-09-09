@@ -37,21 +37,20 @@ public:
 												 //cout << range[1] << endl;
 		int NTABLE = mvns.size();
 		Vector likelihoods(NTABLE);
-		likelihoods.fill(-INFINITY);
 		for (auto i = range[0];i<range[1];i++) // Operates on its own chunk
 		{
 			for (auto j = 0;j < NTABLE;j++)
 			{
-				
-				if (beta[j] > u[i])
+				if (beta[j] >= u[i])
 				{
 					likelihoods[j] = mvns[j].likelihood(x(i)); //**
 				}
 				else
+				{
 					likelihoods[j] = -INFINITY;
+				}
 			}
 			labels[i] = sampleFromLog(likelihoods); //**
-
 		}
 	}
 
@@ -220,15 +219,17 @@ Matrix SliceSampler(Matrix& x, double m, double kappa, double gamma, Vector& mu0
 				int n = c.count[i];
 				Vector meandiff = ((c.sum[i] / n) - mu0);
 				IWishart posteriorcov(Psi + c.scatter[i] +  (meandiff >> meandiff)*(kappa*n / (kappa + n)), m + n);
-				Matrix sigma = posteriorcov.rnd();
+				Matrix& sigma = posteriorcov.rnd();
 				Normal posteriormean((mu0*kappa + c.sum[i]) / (kappa + n), sigma / (kappa + n));
 				mvns[i] = Normal(posteriormean.rnd(), sigma);
+				//cout << "T" << mvns[i].likelihood(x(0)) << endl;
 			}
 			else  // Empty Tables , Sample from Prior
 			{
-				Matrix sigma = priorcov.rnd();
+				Matrix& sigma = priorcov.rnd();
 				Normal priormean(mu0, sigma / kappa);
 				mvns[i] = Normal(priormean.rnd(), sigma);
+				//cout << mvns[i].likelihood(x(0)) << endl;
 			}
 		}
 		
@@ -241,6 +242,8 @@ Matrix SliceSampler(Matrix& x, double m, double kappa, double gamma, Vector& mu0
 		workers.waitAll();
 		NTABLE = relabel(r.labels); // Get unique ones , remove ones with 0 prob
 		cout << NTABLE << ",";
+
+
 		if (iter >= BURNIN && (iter - BURNIN) % STEP == 0) {
 			int li = (((iter - BURNIN) / STEP));
 			for (auto i = 0; i < n;i++)
