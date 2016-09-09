@@ -32,7 +32,7 @@ public:
 
 	void run(int id) {
 		SETUP_ID()
-			int taskid = this->taskid++; // Oth thread is the main process
+		int taskid = this->taskid++; // Oth thread is the main process
 		auto range = trange(n, nchunks, taskid); // 2xNumber of Threads chunks
 												 //cout << range[1] << endl;
 		int NTABLE = mvns.size();
@@ -241,7 +241,7 @@ Matrix SliceSampler(Matrix& x, double m, double kappa, double gamma, Vector& mu0
 		}
 		workers.waitAll();
 		NTABLE = relabel(r.labels); // Get unique ones , remove ones with 0 prob
-		cout << NTABLE << ",";
+		//cout << NTABLE << ",";
 
 
 		if (iter >= BURNIN && (iter - BURNIN) % STEP == 0) {
