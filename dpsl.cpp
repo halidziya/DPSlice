@@ -2,10 +2,10 @@
 #include "FastMat.h"
 #include <string>
 #include "Stut.h"
-int MAX_SWEEP = 500;
+int MAX_SWEEP = 1000;
 int NINITIAL = 1;
 int MAXCOMP = 20;
-int BURNIN = 300;
+int BURNIN = 800;
 int STEP = (MAX_SWEEP - BURNIN) / 10; // Default value is 10 sample + 1 post burnin
 
 class Restaurant : public Task
@@ -214,6 +214,7 @@ Matrix SliceSampler(Matrix& x, double m, double kappa, double gamma, Vector& mu0
 		mvns.resize(NTABLE,Normal(d));
 		for (int i = 0;i < NTABLE;i++)
 		{
+			Vector mu0 = x(int(rand(1, x.r)[0]));
 			if (i < c.count.n) // Used tables
 			{
 				int n = c.count[i];
