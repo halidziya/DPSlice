@@ -7,7 +7,7 @@ end
 
 %% Generate Toy Data
 NCOMP = 6;
-D=2;
+D=33;
 S=10;
 NPOINTS=1000;
 mus=mvnrnd(zeros(1,D),eye(D,D),NCOMP);

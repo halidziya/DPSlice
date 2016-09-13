@@ -3,9 +3,9 @@
 #include <string>
 #include "Stut.h"
 int MAX_SWEEP = 500;
-int NINITIAL = 10;
+int NINITIAL = 1;
 int MAXCOMP = 20;
-int BURNIN = 20;
+int BURNIN = 300;
 int STEP = (MAX_SWEEP - BURNIN) / 10; // Default value is 10 sample + 1 post burnin
 
 class Restaurant : public Task
