@@ -2,10 +2,10 @@
 #include "FastMat.h"
 #include <string>
 #include "Stut.h"
-int MAX_SWEEP = 1000;
-int NINITIAL = 1;
+int MAX_SWEEP = 500;
+int NINITIAL = 50;
 int MAXCOMP = 20;
-int BURNIN = 800;
+int BURNIN = 300;
 int STEP = (MAX_SWEEP - BURNIN) / 10; // Default value is 10 sample + 1 post burnin
 
 class Restaurant : public Task
@@ -148,7 +148,7 @@ double gammalnd(int x) // Actually works on x/2
 
 double logpi = log(M_PI);
 
-Matrix SliceSampler(Matrix& x, double m, double kappa, double gamma, Vector& mu0, Matrix& Psi, ThreadPool& workers, Vector& likelihoods, Vector initialLabels = v({}), int empricalCovariance = 0)
+Matrix SliceSampler(Matrix& x, double m, double kappa, double gamma, Vector& mu0, Matrix& Psi, ThreadPool& workers, Vector& likelihoods, Matrix initialLabels, int empricalCovariance = 0)
 {
 	// INITIALIZATION
 	// Point level variables
@@ -164,7 +164,9 @@ Matrix SliceSampler(Matrix& x, double m, double kappa, double gamma, Vector& mu0
 	if (initialLabels.n == 0)
 		r.labels = rand(n, NTABLE);
 	else
+	{
 		r.labels = initialLabels;
+	}
 	Collector  c(x, r.labels);
 	IWishart priorcov(Psi, m); // No need to create in every iteration
 	int nlabelsample = ((MAX_SWEEP - BURNIN) / STEP);
@@ -214,7 +216,6 @@ Matrix SliceSampler(Matrix& x, double m, double kappa, double gamma, Vector& mu0
 		mvns.resize(NTABLE,Normal(d));
 		for (int i = 0;i < NTABLE;i++)
 		{
-			Vector mu0 = x(int(rand(1, x.r)[0]));
 			if (i < c.count.n) // Used tables
 			{
 				int n = c.count[i];
