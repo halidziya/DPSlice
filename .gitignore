@@ -1,2 +1,10 @@
 /DPParellelSliceSampler.vcxproj.user
 /DPParellelSliceSampler.vcxproj
+/x64/Debug/*.cache
+/x64/Release/DPParell.777CA303.tlog/*.tlog
+/x64/Release/DPParell.777CA303.tlog/*.lastbuildstate
+/x64/Release/DPParell.777CA303.tlog/*
+/x64/Release/*.log
+/x64/Release/*.cache
+/x64/Release/*.obj
+/x64/Release/*.pdb

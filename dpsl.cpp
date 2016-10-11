@@ -253,7 +253,6 @@ Matrix SliceSampler(Matrix& x, double m, double kappa, double gamma, Vector& mu0
 		}
 
 	}
-
 	return sampledLabels;
 }
 
