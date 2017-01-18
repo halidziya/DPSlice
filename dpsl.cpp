@@ -1,9 +1,10 @@
 #include <iostream>
 #include "FastMat.h"
+#include "GMMBase.h"
 #include <string>
 #include "Stut.h"
 int MAX_SWEEP = 500;
-int NINITIAL = 50;
+int NINITIAL = 5;
 int MAXCOMP = 20;
 int BURNIN = 300;
 int STEP = (MAX_SWEEP - BURNIN) / 10; // Default value is 10 sample + 1 post burnin
@@ -136,7 +137,7 @@ Vector stickBreaker(double ustar, double betastar = 1.0, double alpha = 1)
 	return beta;
 }
 
-double gammalnd(int x) // Actually works on x/2 
+double gamlnd(int x) // Actually works on x/2 
 {
 	double res = 0;
 	for (auto i = 0; i < d; i++)
@@ -148,7 +149,7 @@ double gammalnd(int x) // Actually works on x/2
 
 double logpi = log(M_PI);
 
-Matrix SliceSampler(Matrix& x, double m, double kappa, double gamma, Vector& mu0, Matrix& Psi, ThreadPool& workers, Vector& likelihoods, Matrix initialLabels, int empricalCovariance = 0)
+Matrix SliceSampler(Matrix& x, double m, double kappa, double gam, Vector& mu0, Matrix& Psi, ThreadPool& workers, Vector& likelihoods, Matrix initialLabels, int empricalCovariance = 0)
 {
 	// INITIALIZATION
 	// Point level variables
@@ -192,14 +193,14 @@ Matrix SliceSampler(Matrix& x, double m, double kappa, double gamma, Vector& mu0
 			Vector& diff = (mu0 - (s / n));
 			Matrix& ss = Psi + c.scatter[i] + (diff >> diff)*(kappa*n / (kappa + n));
 			ss = ss / (n + m);
-			totallikelihood += -0.5*n*d*logpi - gammalnd(m) + gammalnd(n + m) - (0.5*(n + m))*(d*log(n + m)
-				+ 2 * ss.chol().sumlogdiag()) + (0.5*m)*(d*log(m) + 2 * (Psi / m).chol().sumlogdiag()) - 0.5*d*log((n + kappa) / kappa) + log(gamma) + gl_pc[n * 2];
+			totallikelihood += -0.5*n*d*logpi - gamlnd(m) + gamlnd(n + m) - (0.5*(n + m))*(d*log(n + m)
+				+ 2 * ss.chol().sumlogdiag()) + (0.5*m)*(d*log(m) + 2 * (Psi / m).chol().sumlogdiag()) - 0.5*d*log((n + kappa) / kappa) + log(gam) + gl_pc[n * 2];
 		}
-		likelihoods[iter] = totallikelihood + gl_pc[gamma * 2] - gl_pc[(gamma + n) * 2];
+		likelihoods[iter] = totallikelihood + gl_pc[gam * 2] - gl_pc[(gam + n) * 2];
 
 
 		// Create Betas
-		Vector alpha = c.count.append(gamma);
+		Vector alpha = c.count.append(gam);
 		Dirichlet dr(alpha);
 		beta = dr.rnd();
 		
@@ -208,7 +209,7 @@ Matrix SliceSampler(Matrix& x, double m, double kappa, double gamma, Vector& mu0
 		u *= beta[r.labels];
 		//New Sticks
 		double ustar =  u.minimum();
-		Vector newsticks = stickBreaker(ustar, beta[beta.n - 1],gamma);
+		Vector newsticks = stickBreaker(ustar, beta[beta.n - 1],gam);
 		beta.resize(beta.n - 1);
 		beta = beta.append(newsticks);
 		NTABLE = beta.n;
@@ -274,7 +275,7 @@ int main(int argc, char** argv)
 	}
 	else
 	{
-		cout << "Usage: " << "dpsl.exe datafile.matrix [hypermean.matrix] [hyperscatter.matrix] [params.matrix (d,m,kappa,gamma)]  [#ITERATION] [#BURNIN] [#SAMPLE]  [initiallabels.matrix]: In fixed order";
+		cout << "Usage: " << "dpsl.exe datafile.matrix [hypermean.matrix] [hyperscatter.matrix] [params.matrix (d,m,kappa,gam)]  [#ITERATION] [#BURNIN] [#SAMPLE]  [initiallabels.matrix]: In fixed order";
 		return -1;
 	}
 	cout << "NPOINTS :" << x.r << " NDIMS:" << x.m << endl;
@@ -283,13 +284,13 @@ int main(int argc, char** argv)
 	d = x.m;
 	init_buffer(nthd, x.m);
 	cout << " Available number of threads : " << nthd << endl;
-	precomputeGammaLn(2 * n + 100 * d);
+	precomputegamLn(2 * n + 100 * d);
 
 
 	// Hyper-parameters with default values
 	if (x.data == NULL)
 	{
-		cout << "Usage: " << "dpsl.exe datafile.matrix [hypermean.matrix] [hyperscatter.matrix] [params.matrix (d,m,kappa,gamma)]  [#ITERATION] [#BURNIN] [#SAMPLE]  [initiallabels.matrix]: In fixed order";
+		cout << "Usage: " << "dpsl.exe datafile.matrix [hypermean.matrix] [hyperscatter.matrix] [params.matrix (d,m,kappa,gam)]  [#ITERATION] [#BURNIN] [#SAMPLE]  [initiallabels.matrix]: In fixed order";
 		return -1;
 	}
 
@@ -309,14 +310,14 @@ int main(int argc, char** argv)
 		hyperparams.print();
 		m = hyperparams.data[1];
 		kappa = hyperparams.data[2];
-		gamma = hyperparams.data[3];
-		cout << m << " " << kappa << " " << gamma << endl;
+		gam = hyperparams.data[3];
+		cout << m << " " << kappa << " " << gam << endl;
 	}
 	else
 	{
 		m = x.m + 3;
 		kappa = 1;
-		gamma = 1;
+		gam = 1;
 	}
 
 	if (argc > 3)
@@ -345,7 +346,7 @@ int main(int argc, char** argv)
 	step();
 	Vector likelihoods(MAX_SWEEP);
 
-	auto labels = SliceSampler(x, m, kappa, gamma, mu0, psi, tpool, likelihoods, initialLabels); // data,m,kappa,gamma,mean,cov 
+	auto labels = SliceSampler(x, m, kappa, gam, mu0, psi, tpool, likelihoods, initialLabels); // data,m,kappa,gam,mean,cov 
 	string filename = argv[1];
 	labels.writeBin(filename.append(".labels").c_str());
 	filename = argv[1];;
